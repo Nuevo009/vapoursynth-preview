@@ -770,6 +770,10 @@ class Output(YAMLObject):
 
         if vs_output.format.color_family == vs.RGB:
             del resizer_kwargs['matrix_in_s']
+        # from https://github.com/Irrational-Encoding-Wizardry/vs-preview/commit/9bad45e49e0a2f6b81d3516340df81a235f8037d
+        # and mirmodfunc
+        elif vs_output.format.color_family == vs.GRAY:
+            vs_output = vs_output.std.RemoveFrameProps('_Matrix') if vs.__api_version__.api_major >= 4 else vs_output.std.SetFrameProp(prop='_Matrix', delete = True)
 
         if alpha:
             if vs_output.format == vs.GRAY8:  # type: ignore
