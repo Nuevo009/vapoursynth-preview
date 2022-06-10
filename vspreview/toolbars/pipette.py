@@ -3,11 +3,11 @@ import logging
 from typing import cast, Dict, List, TypeVar, Union
 from weakref import WeakKeyDictionary
 
-from PyQt5 import Qt
+from PyQt5 import Qt, QtWidgets
 import vapoursynth as vs
 
 from vspreview.core    import AbstractMainWindow, AbstractToolbar, Output
-from vspreview.utils   import set_qobject_names
+from vspreview.utils   import set_qobject_names, add_shortcut
 from vspreview.widgets import ColorView
 
 
@@ -19,6 +19,7 @@ class PipetteToolbar(AbstractToolbar):
         'color_view', 'outputs', 'position', 'pos_fmt', 'tracking',
         'rgb_dec', 'rgb_hex', 'rgb_label',
         'src_dec', 'src_dec_fmt', 'src_hex', 'src_hex_fmt', 'src_label',
+        'copy_src_value_button'
     )
 
     data_types = {
@@ -45,7 +46,8 @@ class PipetteToolbar(AbstractToolbar):
         self.src_norm_fmt = '{:0.5f}'
         self.outputs = WeakKeyDictionary[Output, vs.VideoNode]()
         self.tracking = False
-
+        add_shortcut(Qt.Qt.CTRL + Qt.Qt.SHIFT + Qt.Qt.Key_C,
+                self.on_copy_src_value_clicked)
         set_qobject_names(self)
 
     def setup_ui(self) -> None:
@@ -97,6 +99,8 @@ class PipetteToolbar(AbstractToolbar):
         self.src_dec.setTextInteractionFlags(Qt.Qt.TextSelectableByMouse)
         layout.addWidget(self.src_dec)
 
+        self.copy_src_value_button = QtWidgets.QPushButton('⎘', self, clicked=self.on_copy_src_value_clicked)
+        layout.addWidget(self.copy_src_value_button)
         self.src_norm = Qt.QLabel(self)
         self.src_norm.setFont(font)
         self.src_norm.setTextInteractionFlags(Qt.Qt.TextSelectableByMouse)
@@ -246,6 +250,8 @@ class PipetteToolbar(AbstractToolbar):
 
         self.update_labels(self.main.graphics_view.mapFromGlobal(
             self.main.cursor().pos()))
+    def on_copy_src_value_clicked(self) -> None:
+        self.main.clipboard.setText(self.src_dec.text().strip())
 
     def on_toggle(self, new_state: bool) -> None:
         super().on_toggle(new_state)
