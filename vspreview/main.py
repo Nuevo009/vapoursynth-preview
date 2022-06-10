@@ -349,8 +349,6 @@ class MainWindow(AbstractMainWindow):
         'dither_type': 'error_diffusion',
     }
     # status bar
-    STATUS_FRAME_PROP = lambda prop: 'Type: %s' % (prop['_PictType'].decode('utf-8') if '_PictType' in prop else '?')
-
     BENCHMARK_FRAME_DATA_SHARING_FIX  =  True
     DEBUG_PLAY_FPS                    = False
     DEBUG_TOOLBAR                     = False
@@ -488,7 +486,11 @@ class MainWindow(AbstractMainWindow):
         # dialogs
 
         self.script_error_dialog = ScriptErrorDialog(self)
-
+    def status_props(props: dict) -> str:
+        if 'prop' in props:
+            prop = props['prop'].decode('utf-8')
+            return f"{prop}: {props[f'{prop}']}"
+        else: return 'Type: %s' % props['_PictType'].decode('utf-8') if '_PictType' in props else '?'
     def patch_dark_stylesheet(self, stylesheet: str) -> str:
         return stylesheet \
             + ' QGraphicsView { border: 0px; padding: 0px; }' \
@@ -647,7 +649,7 @@ class MainWindow(AbstractMainWindow):
         if render_frame:
             self.current_output.graphics_scene_item.setImage(self.render_frame(frame))
 
-        self.statusbar.frame_props_label.setText(MainWindow.STATUS_FRAME_PROP(self.current_output.cur_frame[0].props))
+        self.statusbar.frame_props_label.setText(MainWindow.status_props(self.current_output.cur_frame[0].props))
 
     def switch_output(self, value: Union[int, Output]) -> None:
         if len(self.outputs) == 0:
