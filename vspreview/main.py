@@ -141,7 +141,7 @@ class MainToolbar(AbstractToolbar):
         add_shortcut(Qt.Qt.Key_S,         self.sync_outputs_checkbox.click)
         add_shortcut(Qt.Qt.CTRL               + Qt.Qt.Key_Tab, lambda: self.main.switch_output(self.outputs_combobox.currentIndex() + 1))
         add_shortcut(Qt.Qt.CTRL + Qt.Qt.SHIFT + Qt.Qt.Key_Tab, lambda: self.main.switch_output(self.outputs_combobox.currentIndex() - 1))
-
+        add_shortcut(Qt.Qt.CTRL + Qt.Qt.SHIFT + Qt.Qt.Key_Z, lambda: self.main.clipboard.setText(str(self.main.current_frame.value)))
         set_qobject_names(self)
 
     def setup_ui(self) -> None:
