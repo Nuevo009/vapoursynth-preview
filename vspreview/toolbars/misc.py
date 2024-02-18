@@ -41,12 +41,15 @@ class MiscToolbar(AbstractToolbar):
         self.         save_button.     clicked.connect(lambda: self.save(manually=True))
         self.keep_on_top_checkbox.stateChanged.connect(        self.on_keep_on_top_changed)
         self.   copy_frame_button.     clicked.connect(        self.copy_frame_to_clipboard)
+        self.scrshot_button.           clicked.connect(        self.on_scrshot_clicked)
         self.save_frame_as_button.     clicked.connect(        self.on_save_frame_as_clicked)
         self. show_debug_checkbox.stateChanged.connect(        self.on_show_debug_changed)
 
         add_shortcut(Qt.Qt.CTRL + Qt.Qt.Key_R, self.reload_script_button.click)
         add_shortcut(Qt.Qt.CTRL + Qt.Qt.Key_S, self.         save_button.click)
         add_shortcut(Qt.Qt.ALT  + Qt.Qt.Key_S, self.   copy_frame_button.click)
+        add_shortcut(Qt.Qt.CTRL + Qt.Qt.ALT + Qt.Qt.Key_S,
+                     self.scrshot_button.click)
         add_shortcut(Qt.Qt.CTRL + Qt.Qt.SHIFT + Qt.Qt.Key_S,
                      self.save_frame_as_button.click)
 
@@ -73,6 +76,10 @@ class MiscToolbar(AbstractToolbar):
         self.copy_frame_button = Qt.QPushButton(self)
         self.copy_frame_button.setText('Copy Frame')
         layout.addWidget(self.copy_frame_button)
+
+        self.scrshot_button = Qt.QPushButton(self)
+        self.scrshot_button.setText('scrshot')
+        layout.addWidget(self.scrshot_button)
 
         self.save_frame_as_button = Qt.QPushButton(self)
         self.save_frame_as_button.setText('Save Frame as')
@@ -144,6 +151,46 @@ class MiscToolbar(AbstractToolbar):
             # self.main.setWindowFlag(Qt.Qt.WindowStaysOnTopHint, True)
         elif state == Qt.Qt.Unchecked:
             self.main.setWindowFlag(Qt.Qt.WindowStaysOnTopHint, False)
+    def on_scrshot_clicked(self):
+        filter_str = ''.join(
+            [file_type + ';;' for file_type in self.save_file_types.keys()])
+        filter_str = filter_str[0:-2]
+        template = self.main.toolbars.misc.save_template_lineedit.text()
+        
+        for i, output in enumerate(self.main.outputs):
+
+            frame_props = output.vs_output.get_frame(
+                          self.main.current_frame).props
+            builtin_substitutions = {
+                'format'       : self.main.current_output.format.name,
+                'fps_den'      : self.main.current_output.fps_den,
+                'fps_num'      : self.main.current_output.fps_num,
+                'frame'        : self.main.current_frame,
+                'height'       : self.main.current_output.height,
+                'index'        : self.main.current_output.index,
+                'matrix'       : Output.Matrix.values[frame_props['_Matrix']],
+                'primaries'    : Output.Primaries.values[frame_props['_Primaries']],
+                'range'        : Output.Range.values[frame_props['_ColorRange']],
+                'script_name'  : self.main.script_path.stem,
+                'total_frames' : self.main.current_output.total_frames,
+                'transfer'     : Output.Transfer.values[frame_props['_Transfer']],
+                'width'        : self.main.current_output.width,
+            }
+            substitutions = {k: v.decode("utf-8") if isinstance(v, bytes) else v for k,v in dict(frame_props).items()}
+            substitutions.update(builtin_substitutions)
+            try:
+                suggested_path_str = template.format(**substitutions)
+            except ValueError:
+                suggested_path_str = self.main.SAVE_TEMPLATE.format(**substitutions)
+                self.main.show_message('Save name template is invalid')
+
+            try:
+                frame_image = output.graphics_scene_item.image()
+                frame_image.save(str(suggested_path_str) + '.png', 'PNG', self.main.PNG_COMPRESSION_LEVEL)
+            except KeyError:
+                pass
+            
+
 
     def on_save_frame_as_clicked(self, checked: Optional[bool] = None) -> None:
         filter_str = ''.join(
